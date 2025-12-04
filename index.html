@@ -315,11 +315,23 @@
   const themeOptions = document.createElement('div');
   themeOptions.className = 'theme-options';
   const themeMap = {
-    pink: '#ffe7f5',
-    green: '#e7f8ee',
-    lavender: '#f6e5fc',
-    blue: '#daece1'
-  };
+    pink: {
+    bg: '#ffe7f5',
+    bar: '#ff66a3'   // hot pink
+  },
+  green: {
+    bg: '#e7f8ee',
+    bar: '#5f9c7a'   // muted dark sage
+  },
+  lavender: {
+    bg: '#f6e5fc',
+    bar: '#b37cd6'   // deep lavender
+  },
+  blue: {
+    bg: '#daece1',
+    bar: '#6ea8c9'   // dusty muted blue
+  }
+};
   Object.entries(themeMap).forEach(([k,c])=>{
     const d = document.createElement('div');
     d.className = 'theme-option-circle';
