@@ -107,14 +107,18 @@
   .bar-outer:hover{ transform:scale(1.02); }
 
   .bar-fill{
-    width:100%;
-    background:linear-gradient(180deg, rgba(255,130,169,0.95), rgba(255,182,193,0.9));
-    height:0%;
-    transition:height .5s ease;
-    display:flex;
-    align-items:flex-end;
-    justify-content:center;
-  }
+  width:100%;
+  background:var(--accent); /* replaced static gradient */
+  height:0%;
+  transition:height .5s ease, background .3s ease;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  border-radius:6px;
+}
+  .meta {
+  display:none !important;
+}
 
   .month-label{
     font-size:10px;
@@ -144,6 +148,13 @@
     pointer-events:none;
     transform-origin:top left;
   }
+  .mood-dot {
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  display:inline-block;
+  margin-right:6px;
+}
 
   .tooltip .row{ display:flex; justify-content:space-between; gap:8px; margin:6px 0; }
   .tooltip strong{ font-weight:600; font-size:13px; }
@@ -484,14 +495,42 @@
     const expenses = stat.expenses ? stat.expenses.toFixed(2) : '0.00';
     const daysLeftInMonth = (new Date(year, stat.idx+1, 0).getDate()) - (new Date().getDate());
     const moreDays = stat.idx === new Date().getMonth() ? `${daysLeftInMonth} more days til next month` : '';
-    tooltip.innerHTML = `
-      <div style="font-size:13px;font-weight:600;text-transform:capitalize">${stat.name} ${year}</div>
-      <div class="row"><span>month completion</span><strong>${stat.completion}%</strong></div>
-      <div class="row"><span>avg mood</span><strong>${avgMood}</strong></div>
-      <div class="row"><span>income</span><strong>$${income}</strong></div>
-      <div class="row"><span>expenses</span><strong>$${expenses}</strong></div>
-      <div style="font-size:11px;color:var(--muted)">${moreDays}</div>
-    `;
+    let moodLabel = '—';
+let moodColor = '#ccc';
+
+if(stat.avgMood){
+  const moodLog = readMoodLog();
+  const entries = Object.values(moodLog).filter(m=>m && m.label);
+  if(entries.length){
+    // pick most common mood for the month
+    const map = {};
+    entries.forEach(m=>{ map[m.label] = (map[m.label]||0)+1; });
+    const top = Object.entries(map).sort((a,b)=>b[1]-a[1])[0][0];
+    moodLabel = top;
+    moodColor = entries.find(m=>m.label===top).color;
+  }
+}
+
+tooltip.innerHTML = `
+  <div style="font-size:13px;font-weight:600;text-transform:capitalize">${stat.name} ${year}</div>
+
+  <div class="row">
+    <span>month completion</span><strong>${stat.completion}%</strong>
+  </div>
+
+  <div class="row">
+    <span>avg mood</span>
+    <strong>
+      <span class="mood-dot" style="background:${moodColor}"></span>
+      ${moodLabel}
+    </strong>
+  </div>
+
+  <div class="row"><span>income</span><strong>$${income}</strong></div>
+  <div class="row"><span>expenses</span><strong>$${expenses}</strong></div>
+
+  <div style="font-size:11px;color:var(--muted)">${moreDays}</div>
+`;
     // position tooltip near rect inside widget
     const wRect = widget.getBoundingClientRect();
     const left = Math.min(Math.max((rect.left - wRect.left) + rect.width + 8, 12), wRect.width - 12 - 220);
@@ -592,13 +631,16 @@
     themeOptions.style.display = themeOptions.style.display === 'flex' ? 'none' : 'flex';
   });
   themeOptions.querySelectorAll('.theme-option-circle').forEach(el=>{
-    el.addEventListener('click', (ev)=>{
-      const color = ev.target.style.background;
-      widget.style.background = color;
-      currentThemeCircle.style.background = color;
-      localStorage.setItem('year-widget-theme', color);
-      themeOptions.style.display = 'none';
-    });
+   el.addEventListener('click', (ev)=>{
+  const color = ev.target.style.background;
+  widget.style.background = color;
+  currentThemeCircle.style.background = color;
+  document.querySelectorAll('.bar-fill').forEach(b=>{
+    b.style.background = color;
+  });
+  localStorage.setItem('year-widget-theme', color);
+  themeOptions.style.display = 'none';
+});
   });
 
   // restore theme
