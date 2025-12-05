@@ -502,26 +502,36 @@
   themeSelector.addEventListener('click', e=>{ e.stopPropagation(); themeOptions.style.display=themeOptions.style.display==='flex'?'none':'flex'; });
 
   // ----------------------------
-  // ✅ Year Overview button
-  todayBtn.textContent='year overview';
-  todayBtn.addEventListener('click', ()=>{
-    const months=computeMonthStats();
-    const totalIncome = months.reduce((sum,m)=>sum+m.income,0).toFixed(2);
-    const totalExpenses = months.reduce((sum,m)=>sum+m.expenses,0).toFixed(2);
-    const completedMonths = months.filter(m=>m.completion===100).length;
+  // ----------------------------
+// ✅ Year Overview button fixed
+todayBtn.textContent = 'year overview';
+todayBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  goalsModal.style.display = 'none';
+  themeOptions.style.display = 'none';
 
-    tooltip.innerHTML=`
-      <div style="font-size:13px;font-weight:600;text-transform:capitalize">Year Overview ${year}</div>
-      <div class="row"><span>months completed</span><strong>${completedMonths}/12</strong></div>
-      <div class="row"><span>total income</span><strong>$${totalIncome}</strong></div>
-      <div class="row"><span>total expenses</span><strong>$${totalExpenses}</strong></div>
-    `;
-    const wRect=widget.getBoundingClientRect();
-    tooltip.style.left=`${wRect.width/2 - 120}px`;
-    tooltip.style.top='20px';
-    tooltip.style.display='block';
-    tooltip.dataset.pinned='1';
-  });
+  const months = computeMonthStats();
+  const totalIncome = months.reduce((sum, m) => sum + m.income, 0).toFixed(2);
+  const totalExpenses = months.reduce((sum, m) => sum + m.expenses, 0).toFixed(2);
+  const completedMonths = months.filter(m => m.completion === 100).length;
+  const avgMoodValues = months.filter(m => m.avgMood).map(m => m.avgMood);
+  const avgMood = avgMoodValues.length ? (avgMoodValues.reduce((a,b)=>a+b,0)/avgMoodValues.length).toFixed(2) : '—';
+
+  tooltip.innerHTML = `
+    <div style="font-size:13px;font-weight:600;text-transform:capitalize; text-align:center; margin-bottom:6px;">Year Overview ${year}</div>
+    <div class="row"><span>months completed</span><strong>${completedMonths}/12</strong></div>
+    <div class="row"><span>avg mood</span><strong>${avgMood}</strong></div>
+    <div class="row"><span>total income</span><strong>$${totalIncome}</strong></div>
+    <div class="row"><span>total expenses</span><strong>$${totalExpenses}</strong></div>
+  `;
+
+  // Position tooltip centered above widget
+  const wRect = widget.getBoundingClientRect();
+  tooltip.style.left = `${wRect.width / 2 - 120}px`; // 240px tooltip width approx
+  tooltip.style.top = `14px`; // small top padding
+  tooltip.style.display = 'block';
+  tooltip.dataset.pinned = '1';
+});
 
   // ----------------------------
   // ✅ Goals button fix
