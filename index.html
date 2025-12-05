@@ -730,64 +730,7 @@ if(savedTheme){
   // refresh
   refreshBtn.addEventListener('click', ()=> { renderBars(); updateFooter(); });
 
-  // computeMonthStatsForSingle - helper for today btn
-  function computeMonthStatsForSingle(i){
-    return computeMonthStats()[i];
-  }
-
-  // small wrapper to get month stats array (same as used above)
-  function computeMonthStats(){
-    // reuse logic from above computeMonthStats but local
-    const moodLog = (()=>{ try{return JSON.parse(localStorage.getItem('mood-log')||'{}')}catch(e){return{}} })();
-    const financeArchive = readFinanceArchive();
-    const financeEntries = readFinanceEntries();
-    const months = [];
-    for(let m=0;m<12;m++){
-      months.push({
-        idx:m,
-        name:monthNames[m],
-        monthKey: `${year}-${String(m+1).padStart(2,'0')}`,
-        daysInMonth: new Date(year,m+1,0).getDate(),
-        moodCount:0,moodSum:0,avgMood:null,
-        income:0,expenses:0,completion:0
-      });
-    }
-
-    Object.entries(moodLog).forEach(([dateKey,mood])=>{
-      if(!dateKey.startsWith(String(year))) return;
-      const mm = parseInt(dateKey.split('-')[1],10)-1;
-      if(mm>=0&&mm<12){
-        const s = (mood && mood.label && (moodScore[mood.label] || 0)) || 0;
-        if(s) { months[mm].moodSum += s; months[mm].moodCount += 1; }
-      }
-    });
-
-    Object.entries(financeArchive).forEach(([monthKey,data])=>{
-      if(!monthKey.startsWith(String(year))) return;
-      const mIdx = parseInt(monthKey.split('-')[1],10)-1;
-      if(mIdx>=0 && mIdx<12){
-        months[mIdx].income += (data.totalIncome||0);
-        months[mIdx].expenses += (data.totalExpenses||0);
-      }
-    });
-
-    financeEntries.forEach(entry=>{
-      if(!entry.date) return;
-      if(!entry.date.startsWith(String(year))) return;
-      const mIdx = new Date(entry.date).getMonth();
-      if(entry.type==='income') months[mIdx].income += entry.amount || 0;
-      else months[mIdx].expenses += entry.amount || 0;
-    });
-
-    months.forEach((m,i)=>{
-      if(m.moodCount>0) m.avgMood = (m.moodSum / m.moodCount);
-      const now = new Date();
-      if(i < now.getMonth()) m.completion = 100;
-      else if(i > now.getMonth()) m.completion = 0;
-      else m.completion = Math.round((now.getDate() / m.daysInMonth) * 100);
-    });
-    return months;
-  }
+  
 
   // init
   renderBars();
