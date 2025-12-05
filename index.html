@@ -314,57 +314,55 @@
   const currentThemeCircle = document.getElementById('currentThemeCircle');
   const themeOptions = document.createElement('div');
   themeOptions.className = 'theme-options'; 
-  
+
+  // darken/lighten helpers
   function darken(hex, amount = 18){
-  let col = hex.replace('#','');
-  if(col.length === 3){
-    col = col.split('').map(c=>c+c).join('');
+    let col = hex.replace('#','');
+    if(col.length === 3){
+      col = col.split('').map(c=>c+c).join('');
+    }
+    const num = parseInt(col,16);
+    let r = (num >> 16) - amount;
+    let g = ((num >> 8) & 0xFF) - amount;
+    let b = (num & 0xFF) - amount;
+    r = Math.max(0,r);
+    g = Math.max(0,g);
+    b = Math.max(0,b);
+    return `rgb(${r},${g},${b})`;
   }
-  const num = parseInt(col,16);
-  let r = (num >> 16) - amount;
-  let g = ((num >> 8) & 0xFF) - amount;
-  let b = (num & 0xFF) - amount;
-  r = Math.max(0,r);
-  g = Math.max(0,g);
-  b = Math.max(0,b);
-  return `rgb(${r},${g},${b})`;
-}
   function lighten(hex, amount = 20){
-  let col = hex.replace('#','');
-  if(col.length===3){
-    col = col.split('').map(c=>c+c).join('');
+    let col = hex.replace('#','');
+    if(col.length===3){
+      col = col.split('').map(c=>c+c).join('');
+    }
+    const num = parseInt(col,16);
+
+    let r = (num >> 16) + amount;
+    let g = ((num >> 8) & 0xFF) + amount;
+    let b = (num & 0xFF) + amount;
+
+    r = Math.min(255,r);
+    g = Math.min(255,g);
+    b = Math.min(255,b);
+
+    return `rgb(${r},${g},${b})`;
   }
-  const num = parseInt(col,16);
 
-  let r = (num >> 16) + amount;
-  let g = ((num >> 8) & 0xFF) + amount;
-  let b = (num & 0xFF) + amount;
-
-  r = Math.min(255,r);
-  g = Math.min(255,g);
-  b = Math.min(255,b);
-
-  return `rgb(${r},${g},${b})`;
-}
+  // 👀 define themeMap with bar: null first
   const themeMap = {
-  pink: {
-    bg: '#ffe7f5',
-    bar: darken('#ffe7f5', 55)
-  },
-  green: {
-    bg: '#e7f8ee',
-    bar: darken('#e7f8ee', 70)
-  },
-  lavender: {
-    bg: '#f6e5fc',
-    bar: darken('#f6e5fc', 65)
-  },
-  blue: {
-    bg: '#daece1',
-    bar: darken('#daece1', 60)
-  }
-};
- 
+    pink: { bg: '#ffe7f5', bar: null },
+    green: { bg: '#e7f8ee', bar: null },
+    lavender: { bg: '#f6e5fc', bar: null },
+    blue: { bg: '#daece1', bar: null }
+  };
+
+  // assign bar colors AFTER darken() is ready
+  themeMap.pink.bar = darken(themeMap.pink.bg, 55);
+  themeMap.green.bar = darken(themeMap.green.bg, 70);
+  themeMap.lavender.bar = darken(themeMap.lavender.bg, 65);
+  themeMap.blue.bar = darken(themeMap.blue.bg, 60);
+
+  // insert theme options
   Object.entries(themeMap).forEach(([k,c])=>{
     const d = document.createElement('div');
     d.className = 'theme-option-circle';
@@ -413,9 +411,9 @@
 
   // compute per-month stats
   function computeMonthStats(){
-    const moodLog = readMoodLog(); // dateKey -> {color,label}
+    const moodLog = readMoodLog();
     const financeArchive = readFinanceArchive();
-    const financeEntries = readFinanceEntries(); // current month entries
+    const financeEntries = readFinanceEntries();
     const months = [];
 
     for(let m=0;m<12;m++){
@@ -429,13 +427,11 @@
         avgMood: null,
         income:0,
         expenses:0,
-        completion:0 // will be days passed / daysInMonth
+        completion:0
       });
     }
 
-    // moodLog entries keyed by date, compute monthly averages
     Object.entries(moodLog).forEach(([dateKey, mood])=>{
-      // dateKey like YYYY-MM-DD
       if(!dateKey.startsWith(String(year))) return;
       const [y,mm,dd] = dateKey.split('-');
       const mIdx = parseInt(mm,10)-1;
@@ -447,7 +443,6 @@
       }
     });
 
-    // financeArchive (archived months)
     Object.entries(financeArchive).forEach(([monthKey,data])=>{
       if(!monthKey.startsWith(String(year))) return;
       const mIdx = parseInt(monthKey.split('-')[1],10)-1;
@@ -456,7 +451,6 @@
       months[mIdx].expenses += (data.totalExpenses||0);
     });
 
-    // current financeEntries (if any) could include dates; add them by month
     financeEntries.forEach(entry=>{
       if(!entry.date) return;
       if(!entry.date.startsWith(String(year))) return;
@@ -465,10 +459,8 @@
       else months[mIdx].expenses += entry.amount || 0;
     });
 
-    // finalize averages and completion (how much of that month has passed)
     months.forEach((m,i)=>{
       if(m.moodCount>0) m.avgMood = (m.moodSum / m.moodCount);
-      // completion: if month < current month => 100%, if > current month => 0, if current month => proportion days passed
       const now = new Date();
       if(i < now.getMonth()) m.completion = 100;
       else if(i > now.getMonth()) m.completion = 0;
@@ -504,7 +496,6 @@
       monthLabel.className = 'month-label';
       monthLabel.textContent = m.name;
 
-      // small month number under label
       const monthNum = document.createElement('div');
       monthNum.className = 'month-number';
       monthNum.textContent = m.idx+1;
@@ -513,7 +504,6 @@
       col.appendChild(monthLabel);
       col.appendChild(monthNum);
 
-      // hover tooltip logic
       col.addEventListener('mouseenter', (e)=>{
         const rect = col.getBoundingClientRect();
         const monthsStats = computeMonthStats();
@@ -521,7 +511,6 @@
         showTooltipForMonth(stat, rect);
       });
       col.addEventListener('mouseleave', hideTooltip);
-      // click: jump to month (emulate linking to other widgets — open small panel)
       col.addEventListener('click',(e)=>{
         e.stopPropagation();
         const stat = computeMonthStats()[m.idx];
@@ -534,61 +523,49 @@
 
   // tooltip content
   function showTooltipForMonth(stat, rect, pinned=false){
-    // build content
     const avgMood = stat.avgMood ? stat.avgMood.toFixed(2) : '—';
     const income = stat.income ? stat.income.toFixed(2) : '0.00';
     const expenses = stat.expenses ? stat.expenses.toFixed(2) : '0.00';
     const daysLeftInMonth = (new Date(year, stat.idx+1, 0).getDate()) - (new Date().getDate());
     const moreDays = stat.idx === new Date().getMonth() ? `${daysLeftInMonth} more days til next month` : '';
     let moodLabel = '—';
-let moodColor = '#ccc';
+    let moodColor = '#ccc';
 
-if(stat.avgMood){
-  const moodLog = readMoodLog();
-  const entries = Object.values(moodLog).filter(m=>m && m.label);
-  if(entries.length){
-    // pick most common mood for the month
-    const map = {};
-    entries.forEach(m=>{ map[m.label] = (map[m.label]||0)+1; });
-    const top = Object.entries(map).sort((a,b)=>b[1]-a[1])[0][0];
-    moodLabel = top;
-    moodColor = entries.find(m=>m.label===top).color;
-  }
-}
+    if(stat.avgMood){
+      const moodLog = readMoodLog();
+      const entries = Object.values(moodLog).filter(m=>m && m.label);
+      if(entries.length){
+        const map = {};
+        entries.forEach(m=>{ map[m.label] = (map[m.label]||0)+1; });
+        const top = Object.entries(map).sort((a,b)=>b[1]-a[1])[0][0];
+        moodLabel = top;
+        moodColor = entries.find(m=>m.label===top).color;
+      }
+    }
 
-tooltip.innerHTML = `
-  <div style="font-size:13px;font-weight:600;text-transform:capitalize">${stat.name} ${year}</div>
-
-  <div class="row">
-    <span>month completion</span><strong>${stat.completion}%</strong>
-  </div>
-
-  <div class="row">
-    <span>avg mood</span>
-    <strong>
-      <span class="mood-dot" style="background:${moodColor}"></span>
-      ${moodLabel}
-    </strong>
-  </div>
-
-  <div class="row"><span>income</span><strong>$${income}</strong></div>
-  <div class="row"><span>expenses</span><strong>$${expenses}</strong></div>
-
-  <div style="font-size:11px;color:var(--muted)">${moreDays}</div>
-`;
-    // position tooltip near rect inside widget
+    tooltip.innerHTML = `
+      <div style="font-size:13px;font-weight:600;text-transform:capitalize">${stat.name} ${year}</div>
+      <div class="row">
+        <span>month completion</span><strong>${stat.completion}%</strong>
+      </div>
+      <div class="row">
+        <span>avg mood</span>
+        <strong>
+          <span class="mood-dot" style="background:${moodColor}"></span>
+          ${moodLabel}
+        </strong>
+      </div>
+      <div class="row"><span>income</span><strong>$${income}</strong></div>
+      <div class="row"><span>expenses</span><strong>$${expenses}</strong></div>
+      <div style="font-size:11px;color:var(--muted)">${moreDays}</div>
+    `;
     const wRect = widget.getBoundingClientRect();
     const left = Math.min(Math.max((rect.left - wRect.left) + rect.width + 8, 12), wRect.width - 12 - 220);
     const top = Math.max((rect.top - wRect.top) - 8, 8);
     tooltip.style.left = left + 'px';
     tooltip.style.top = top + 'px';
     tooltip.style.display = 'block';
-    if(pinned){
-      // pinned tooltip stays until click elsewhere
-      tooltip.dataset.pinned = '1';
-    } else {
-      tooltip.dataset.pinned = '';
-    }
+    tooltip.dataset.pinned = pinned ? '1' : '';
   }
   function hideTooltip(){
     if(tooltip.dataset.pinned === '1') return;
@@ -596,7 +573,7 @@ tooltip.innerHTML = `
     tooltip.innerHTML = '';
   }
 
-  // days til next year footer content
+  // footer
   function updateFooter(){
     const now = new Date();
     const startNextYear = new Date(now.getFullYear()+1,0,1);
@@ -604,17 +581,13 @@ tooltip.innerHTML = `
     footerText.textContent = `${days} days until ${now.getFullYear()+1} • tracked mood + finance connect`;
   }
 
-  // goals CRUD using localStorage 'yearly-goals-<year>'
+  // goals CRUD
   const goalsKey = `yearly-goals-${year}`;
   function loadGoals(){
     const raw = localStorage.getItem(goalsKey);
-    try {
-      return raw ? JSON.parse(raw) : [];
-    } catch(e){ return []; }
+    try { return raw ? JSON.parse(raw) : []; } catch(e){ return []; }
   }
-  function saveGoals(list){
-    localStorage.setItem(goalsKey, JSON.stringify(list));
-  }
+  function saveGoals(list){ localStorage.setItem(goalsKey, JSON.stringify(list)); }
   function renderGoals(){
     const list = loadGoals();
     goalList.innerHTML = '';
@@ -628,7 +601,6 @@ tooltip.innerHTML = `
         </div>`;
       goalList.appendChild(item);
     });
-    // attach handlers
     goalList.querySelectorAll('.remove-goal').forEach(btn=>{
       btn.addEventListener('click', ()=> {
         const idx = parseInt(btn.dataset.i,10);
@@ -664,62 +636,42 @@ tooltip.innerHTML = `
     goalInput.value = '';
     renderGoals();
   });
-  clearGoals.addEventListener('click', ()=>{
-    saveGoals([]);
-    renderGoals();
-  });
+  clearGoals.addEventListener('click', ()=>{ saveGoals([]); renderGoals(); });
   closeGoals.addEventListener('click', ()=> goalsModal.style.display='none');
 
-  // theme selector handlers
-  themeSelector.addEventListener('click', (e)=>{
-    e.stopPropagation();
-    themeOptions.style.display = themeOptions.style.display === 'flex' ? 'none' : 'flex';
-  });
+  // theme selector
+  themeSelector.addEventListener('click', (e)=>{ e.stopPropagation(); themeOptions.style.display = themeOptions.style.display === 'flex' ? 'none' : 'flex'; });
   themeOptions.querySelectorAll('.theme-option-circle').forEach(el=>{
-  el.addEventListener('click', (ev)=>{
-    const theme = ev.target.dataset.theme;
-    const bg = themeMap[theme].bg;
-    const bar = themeMap[theme].bar; // darker bar color
-
-    // set background + theme circle
-    widget.style.background = bg;
-    currentThemeCircle.style.background = bg;
-
-    // update bars
-    document.querySelectorAll('.bar-fill').forEach(b=>{
-      b.style.background = bar;
+    el.addEventListener('click', (ev)=>{
+      const theme = ev.target.dataset.theme;
+      const bg = themeMap[theme].bg;
+      const bar = themeMap[theme].bar;
+      widget.style.background = bg;
+      currentThemeCircle.style.background = bg;
+      document.querySelectorAll('.bar-fill').forEach(b=>{ b.style.background = bar; });
+      localStorage.setItem('year-widget-theme', JSON.stringify({bg, bar}));
+      themeOptions.style.display = 'none';
     });
-
-    // save theme
-    localStorage.setItem('year-widget-theme', JSON.stringify({bg, bar}));
-
-    themeOptions.style.display = 'none';
-  });
-});
   });
 
   // restore theme
-  // restore theme (bg + bar)
-const savedTheme = localStorage.getItem('year-widget-theme');
-if(savedTheme){
-  const {bg, bar} = JSON.parse(savedTheme);
-  widget.style.background = bg;
-  currentThemeCircle.style.background = bg;
-  document.querySelectorAll('.bar-fill').forEach(b=>{
-    b.style.background = `linear-gradient(to top, ${bar}, ${lighten(bar, 22)})`;
-  });
-} else {
-  // default = pink theme
-  const defaultBG = themeMap.pink.bg;
-  const defaultBar = themeMap.pink.bar;
-  widget.style.background = defaultBG;
-  currentThemeCircle.style.background = defaultBG;
-  document.querySelectorAll('.bar-fill').forEach(b=>{
-    b.style.background = defaultBar;
-  });
-}
+  const savedTheme = localStorage.getItem('year-widget-theme');
+  if(savedTheme){
+    const {bg, bar} = JSON.parse(savedTheme);
+    widget.style.background = bg;
+    currentThemeCircle.style.background = bg;
+    document.querySelectorAll('.bar-fill').forEach(b=>{
+      b.style.background = `linear-gradient(to top, ${bar}, ${lighten(bar, 22)})`;
+    });
+  } else {
+    const defaultBG = themeMap.pink.bg;
+    const defaultBar = themeMap.pink.bar;
+    widget.style.background = defaultBG;
+    currentThemeCircle.style.background = defaultBG;
+    document.querySelectorAll('.bar-fill').forEach(b=>{ b.style.background = defaultBar; });
+  }
 
-  // today button - scroll hover to current month (simulate)
+  // today button
   todayBtn.addEventListener('click', ()=>{
     const idx = new Date().getMonth();
     const target = barsWrap.querySelector(`[data-month="${year}-${String(idx+1).padStart(2,'0')}"]`);
@@ -732,24 +684,19 @@ if(savedTheme){
   // refresh
   refreshBtn.addEventListener('click', ()=> { renderBars(); updateFooter(); });
 
-
-function computeMonthStatsForSingle(i){
-  return computeMonthStats()[i];
-}
+  function computeMonthStatsForSingle(i){ return computeMonthStats()[i]; }
 
   // init
   renderBars();
   updateFooter();
 
-  // close tooltip if click outside
+  // click outside handlers
   document.body.addEventListener('click', ()=> {
     tooltip.style.display='none';
     tooltip.dataset.pinned='';
     themeOptions.style.display='none';
     goalsModal.style.display='none';
   });
-
-  // keep tooltip pinned until next click if user clicked a month (the code sets dataset.pinned)
   document.addEventListener('click', (e)=>{
     if(tooltip.dataset.pinned === '1' && !tooltip.contains(e.target)) {
       tooltip.style.display='none';
@@ -757,7 +704,7 @@ function computeMonthStatsForSingle(i){
     }
   });
 
-  // small utilities: recompute on storage change (if other widget updates)
+  // storage listener
   window.addEventListener('storage', (e)=>{
     if(['mood-log','financeArchive','financeEntries'].includes(e.key)){
       renderBars();
@@ -765,7 +712,6 @@ function computeMonthStatsForSingle(i){
     }
   });
 
-  // expose a manual refresh to be safe
   window.yearWidgetRefresh = ()=>{ renderBars(); updateFooter(); };
 
 })();
