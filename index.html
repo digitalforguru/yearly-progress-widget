@@ -315,27 +315,41 @@
   const themeOptions = document.createElement('div');
   themeOptions.className = 'theme-options';
   const themeMap = {
-    pink: {
+  pink: {
     bg: '#ffe7f5',
-    bar: '#ff66a3'   // hot pink
+    bar: darken('#ffe7f5', 55)
   },
   green: {
     bg: '#e7f8ee',
-    bar: '#5f9c7a'   // muted dark sage
+    bar: darken('#e7f8ee', 70)
   },
   lavender: {
     bg: '#f6e5fc',
-    bar: '#b37cd6'   // deep lavender
+    bar: darken('#f6e5fc', 65)
   },
   blue: {
     bg: '#daece1',
-    bar: '#6ea8c9'   // dusty muted blue
+    bar: darken('#daece1', 60)
   }
 };
+  function darken(hex, amount = 18){
+  let col = hex.replace('#','');
+  if(col.length === 3){
+    col = col.split('').map(c=>c+c).join('');
+  }
+  const num = parseInt(col,16);
+  let r = (num >> 16) - amount;
+  let g = ((num >> 8) & 0xFF) - amount;
+  let b = (num & 0xFF) - amount;
+  r = Math.max(0,r);
+  g = Math.max(0,g);
+  b = Math.max(0,b);
+  return `rgb(${r},${g},${b})`;
+}
   Object.entries(themeMap).forEach(([k,c])=>{
     const d = document.createElement('div');
     d.className = 'theme-option-circle';
-    d.style.background = c;
+    d.style.background = c.bg;
     d.dataset.theme = k;
     themeOptions.appendChild(d);
   });
