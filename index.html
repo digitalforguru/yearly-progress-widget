@@ -643,26 +643,48 @@ tooltip.innerHTML = `
     themeOptions.style.display = themeOptions.style.display === 'flex' ? 'none' : 'flex';
   });
   themeOptions.querySelectorAll('.theme-option-circle').forEach(el=>{
-   el.addEventListener('click', (ev)=>{
-  const color = ev.target.style.background;
-  widget.style.background = color;
-  currentThemeCircle.style.background = color;
-  document.querySelectorAll('.bar-fill').forEach(b=>{
-    b.style.background = color;
+  el.addEventListener('click', (ev)=>{
+    const theme = ev.target.dataset.theme;
+    const bg = themeMap[theme].bg;
+    const bar = themeMap[theme].bar; // darker bar color
+
+    // set background + theme circle
+    widget.style.background = bg;
+    currentThemeCircle.style.background = bg;
+
+    // update bars
+    document.querySelectorAll('.bar-fill').forEach(b=>{
+      b.style.background = bar;
+    });
+
+    // save theme
+    localStorage.setItem('year-widget-theme', JSON.stringify({bg, bar}));
+
+    themeOptions.style.display = 'none';
   });
-  localStorage.setItem('year-widget-theme', color);
-  themeOptions.style.display = 'none';
 });
   });
 
   // restore theme
-  const savedTheme = localStorage.getItem('year-widget-theme');
-  if(savedTheme){
-    widget.style.background = savedTheme;
-    currentThemeCircle.style.background = savedTheme;
-  } else {
-    currentThemeCircle.style.background = themeMap && themeMap.pink || '#ffe7f5';
-  }
+  // restore theme (bg + bar)
+const savedTheme = localStorage.getItem('year-widget-theme');
+if(savedTheme){
+  const {bg, bar} = JSON.parse(savedTheme);
+  widget.style.background = bg;
+  currentThemeCircle.style.background = bg;
+  document.querySelectorAll('.bar-fill').forEach(b=>{
+    b.style.background = bar;
+  });
+} else {
+  // default = pink theme
+  const defaultBG = themeMap.pink.bg;
+  const defaultBar = themeMap.pink.bar;
+  widget.style.background = defaultBG;
+  currentThemeCircle.style.background = defaultBG;
+  document.querySelectorAll('.bar-fill').forEach(b=>{
+    b.style.background = defaultBar;
+  });
+}
 
   // today button - scroll hover to current month (simulate)
   todayBtn.addEventListener('click', ()=>{
