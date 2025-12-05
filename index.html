@@ -313,25 +313,8 @@
   const themeSelector = document.getElementById('themeSelector');
   const currentThemeCircle = document.getElementById('currentThemeCircle');
   const themeOptions = document.createElement('div');
-  themeOptions.className = 'theme-options';
-  const themeMap = {
-  pink: {
-    bg: '#ffe7f5',
-    bar: darken('#ffe7f5', 55)
-  },
-  green: {
-    bg: '#e7f8ee',
-    bar: darken('#e7f8ee', 70)
-  },
-  lavender: {
-    bg: '#f6e5fc',
-    bar: darken('#f6e5fc', 65)
-  },
-  blue: {
-    bg: '#daece1',
-    bar: darken('#daece1', 60)
-  }
-};
+  themeOptions.className = 'theme-options'; 
+  
   function darken(hex, amount = 18){
   let col = hex.replace('#','');
   if(col.length === 3){
@@ -363,6 +346,25 @@
 
   return `rgb(${r},${g},${b})`;
 }
+  const themeMap = {
+  pink: {
+    bg: '#ffe7f5',
+    bar: darken('#ffe7f5', 55)
+  },
+  green: {
+    bg: '#e7f8ee',
+    bar: darken('#e7f8ee', 70)
+  },
+  lavender: {
+    bg: '#f6e5fc',
+    bar: darken('#f6e5fc', 65)
+  },
+  blue: {
+    bg: '#daece1',
+    bar: darken('#daece1', 60)
+  }
+};
+ 
   Object.entries(themeMap).forEach(([k,c])=>{
     const d = document.createElement('div');
     d.className = 'theme-option-circle';
