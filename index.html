@@ -346,6 +346,23 @@
   b = Math.max(0,b);
   return `rgb(${r},${g},${b})`;
 }
+  function lighten(hex, amount = 20){
+  let col = hex.replace('#','');
+  if(col.length===3){
+    col = col.split('').map(c=>c+c).join('');
+  }
+  const num = parseInt(col,16);
+
+  let r = (num >> 16) + amount;
+  let g = ((num >> 8) & 0xFF) + amount;
+  let b = (num & 0xFF) + amount;
+
+  r = Math.min(255,r);
+  g = Math.min(255,g);
+  b = Math.min(255,b);
+
+  return `rgb(${r},${g},${b})`;
+}
   Object.entries(themeMap).forEach(([k,c])=>{
     const d = document.createElement('div');
     d.className = 'theme-option-circle';
@@ -687,7 +704,7 @@ if(savedTheme){
   widget.style.background = bg;
   currentThemeCircle.style.background = bg;
   document.querySelectorAll('.bar-fill').forEach(b=>{
-    b.style.background = bar;
+    b.style.background = `linear-gradient(to top, ${bar}, ${lighten(bar, 22)})`;
   });
 } else {
   // default = pink theme
