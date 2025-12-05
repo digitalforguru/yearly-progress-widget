@@ -456,7 +456,7 @@
     tooltip.innerHTML=`
       <div style="font-size:13px;font-weight:600;text-transform:capitalize">${stat.name} ${year}</div>
       <div class="row"><span>month completion</span><strong>${stat.completion}%</strong></div>
-      <div class="row"><span>avg mood</span><strong><span class="mood-dot" style="background:${moodColor}"></span>${moodLabel}</strong></div>
+      <div class="row"><span>avg day</span><strong><span class="mood-dot" style="background:${moodColor}"></span>${moodLabel}</strong></div>
       <div class="row"><span>income</span><strong>$${income}</strong></div>
       <div class="row"><span>expenses</span><strong>$${expenses}</strong></div>
       <div style="font-size:11px;color:var(--muted)">${moreDays}</div>
@@ -476,7 +476,7 @@
     const now=new Date();
     const startNextYear=new Date(now.getFullYear()+1,0,1);
     const days=Math.ceil((startNextYear-now)/(24*60*60*1000));
-    footerText.textContent=`${days} days until ${now.getFullYear()+1} • tracked mood + finance connect`;
+    footerText.textContent=`${days} days until ${now.getFullYear()+1}`;
   }
 
   // theme apply
