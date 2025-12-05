@@ -306,45 +306,37 @@
   const daysTilEl = document.getElementById('daysTil');
   const tooltip = document.getElementById('tooltip');
   const footerText = document.getElementById('footerText');
-  const todayBtn = document.getElementById('todayBtn');
+  const todayBtn = document.getElementById('todayBtn'); // will be Year Overview
   const refreshBtn = document.getElementById('refreshBtn');
 
-  // theme selector
   const themeSelector = document.getElementById('themeSelector');
   const currentThemeCircle = document.getElementById('currentThemeCircle');
   const themeOptions = document.createElement('div');
   themeOptions.className = 'theme-options'; 
-  
+
   function darken(hex, amount = 18){
     let col = hex.replace('#','');
-    if(col.length === 3){
-      col = col.split('').map(c=>c+c).join('');
-    }
+    if(col.length === 3){ col = col.split('').map(c=>c+c).join(''); }
     const num = parseInt(col,16);
     let r = (num >> 16) - amount;
     let g = ((num >> 8) & 0xFF) - amount;
     let b = (num & 0xFF) - amount;
-    r = Math.max(0,r);
-    g = Math.max(0,g);
-    b = Math.max(0,b);
+    r=Math.max(0,r); g=Math.max(0,g); b=Math.max(0,b);
     return `rgb(${r},${g},${b})`;
   }
+
   function lighten(hex, amount = 20){
     let col = hex.replace('#','');
-    if(col.length===3){
-      col = col.split('').map(c=>c+c).join('');
-    }
+    if(col.length===3){ col = col.split('').map(c=>c+c).join(''); }
     const num = parseInt(col,16);
     let r = (num >> 16) + amount;
     let g = ((num >> 8) & 0xFF) + amount;
     let b = (num & 0xFF) + amount;
-    r = Math.min(255,r);
-    g = Math.min(255,g);
-    b = Math.min(255,b);
+    r=Math.min(255,r); g=Math.min(255,g); b=Math.min(255,b);
     return `rgb(${r},${g},${b})`;
   }
 
-  // store only hex in localStorage, calculate bar dynamically
+  // theme map
   const themeMap = {
     pink: { bg: '#ffe7f5', barHex: '#ff82a9' },
     green: { bg: '#e7f8ee', barHex: '#3cba7f' },
@@ -353,24 +345,21 @@
   };
 
   Object.entries(themeMap).forEach(([k,c])=>{
-    const d = document.createElement('div');
-    d.className = 'theme-option-circle';
-    d.style.background = c.bg;
-    d.dataset.theme = k;
+    const d=document.createElement('div');
+    d.className='theme-option-circle';
+    d.style.background=c.bg;
+    d.dataset.theme=k;
     themeOptions.appendChild(d);
   });
   themeSelector.appendChild(themeOptions);
-  themeOptions.style.display = 'none';
+  themeOptions.style.display='none';
 
   // helpers
   const today = new Date();
   const year = today.getFullYear();
-  const startOfYear = new Date(year,0,1);
-  const endOfYear = new Date(year+1,0,1);
-  const daysLeft = Math.ceil((endOfYear - today)/(24*60*60*1000));
-  daysTilEl.textContent = `${daysLeft} days til ${year+1}`;
+  const daysLeft = Math.ceil((new Date(year+1,0,1)-today)/(24*60*60*1000));
+  daysTilEl.textContent=`${daysLeft} days til ${year+1}`;
 
-  // read local data
   function readMoodLog(){ try { return JSON.parse(localStorage.getItem('mood-log')||'{}'); } catch(e){ return {}; } }
   function readFinanceArchive(){ try { return JSON.parse(localStorage.getItem('financeArchive')||'{}'); } catch(e){ return {}; } }
   function readFinanceEntries(){ try { return JSON.parse(localStorage.getItem('financeEntries')||'[]'); } catch(e){ return []; } }
@@ -381,34 +370,33 @@
     const moodLog = readMoodLog();
     const financeArchive = readFinanceArchive();
     const financeEntries = readFinanceEntries();
-    const months = [];
+    const months=[];
     for(let m=0;m<12;m++){
-      months.push({ idx:m, name:monthNames[m], monthKey: `${year}-${String(m+1).padStart(2,'0')}`, daysInMonth: new Date(year, m+1, 0).getDate(), moodCount:0, moodSum:0, avgMood: null, income:0, expenses:0, completion:0 });
+      months.push({ idx:m, name:monthNames[m], monthKey:`${year}-${String(m+1).padStart(2,'0')}`, daysInMonth:new Date(year,m+1,0).getDate(), moodCount:0, moodSum:0, avgMood:null, income:0, expenses:0, completion:0 });
     }
     Object.entries(moodLog).forEach(([dateKey, mood])=>{
       if(!dateKey.startsWith(String(year))) return;
-      const [y,mm,dd] = dateKey.split('-');
-      const mIdx = parseInt(mm,10)-1;
+      const [y,mm] = dateKey.split('-');
+      const mIdx=parseInt(mm,10)-1;
       if(mIdx<0||mIdx>11) return;
-      const score = mood && mood.label && moodScore[mood.label] ? moodScore[mood.label] : null;
+      const score=mood && mood.label && moodScore[mood.label]?moodScore[mood.label]:null;
       if(score!==null){ months[mIdx].moodSum+=score; months[mIdx].moodCount+=1; }
     });
     Object.entries(financeArchive).forEach(([monthKey,data])=>{
       if(!monthKey.startsWith(String(year))) return;
-      const mIdx = parseInt(monthKey.split('-')[1],10)-1;
+      const mIdx=parseInt(monthKey.split('-')[1],10)-1;
       if(isNaN(mIdx)||mIdx<0||mIdx>11) return;
-      months[mIdx].income += (data.totalIncome||0);
-      months[mIdx].expenses += (data.totalExpenses||0);
+      months[mIdx].income+=(data.totalIncome||0);
+      months[mIdx].expenses+=(data.totalExpenses||0);
     });
     financeEntries.forEach(entry=>{
-      if(!entry.date) return;
-      if(!entry.date.startsWith(String(year))) return;
-      const mIdx = new Date(entry.date).getMonth();
+      if(!entry.date || !entry.date.startsWith(String(year))) return;
+      const mIdx=new Date(entry.date).getMonth();
       if(entry.type==='income') months[mIdx].income+=entry.amount;
       else months[mIdx].expenses+=entry.amount||0;
     });
     months.forEach((m,i)=>{
-      if(m.moodCount>0) m.avgMood = (m.moodSum/m.moodCount);
+      if(m.moodCount>0) m.avgMood=(m.moodSum/m.moodCount);
       const now=new Date();
       if(i<now.getMonth()) m.completion=100;
       else if(i>now.getMonth()) m.completion=0;
@@ -419,7 +407,7 @@
 
   function renderBars(){
     barsWrap.innerHTML='';
-    const months = computeMonthStats();
+    const months=computeMonthStats();
     months.forEach(m=>{
       const col=document.createElement('div');
       col.className='month-col';
@@ -448,11 +436,11 @@
   }
 
   function showTooltipForMonth(stat, rect, pinned=false){
-    const avgMood = stat.avgMood ? stat.avgMood.toFixed(2) : '—';
-    const income = stat.income ? stat.income.toFixed(2) : '0.00';
-    const expenses = stat.expenses ? stat.expenses.toFixed(2) : '0.00';
-    const daysLeftInMonth = (new Date(year, stat.idx+1,0).getDate())-(new Date().getDate());
-    const moreDays = stat.idx===new Date().getMonth()?`${daysLeftInMonth} more days til next month`:'';
+    const avgMood = stat.avgMood?stat.avgMood.toFixed(2):'—';
+    const income = stat.income?stat.income.toFixed(2):'0.00';
+    const expenses = stat.expenses?stat.expenses.toFixed(2):'0.00';
+    const daysLeftInMonth=(new Date(year,stat.idx+1,0).getDate())-(new Date().getDate());
+    const moreDays=stat.idx===new Date().getMonth()?`${daysLeftInMonth} more days til next month`:'';
     let moodLabel='—'; let moodColor='#ccc';
     if(stat.avgMood){
       const moodLog=readMoodLog();
@@ -482,7 +470,7 @@
     tooltip.dataset.pinned=pinned?'1':'';
   }
 
-  function hideTooltip(){ if(tooltip.dataset.pinned==='1')return; tooltip.style.display='none'; tooltip.innerHTML=''; }
+  function hideTooltip(){ if(tooltip.dataset.pinned==='1') return; tooltip.style.display='none'; tooltip.innerHTML=''; }
 
   function updateFooter(){
     const now=new Date();
@@ -491,23 +479,18 @@
     footerText.textContent=`${days} days until ${now.getFullYear()+1} • tracked mood + finance connect`;
   }
 
-  function computeMonthStatsForSingle(i){ return computeMonthStats()[i]; }
-
-  // theme selector save/restore (FIXED)
+  // theme apply
   function applyTheme(theme){
-    const {bg, barHex} = themeMap[theme];
+    const {bg, barHex}=themeMap[theme];
     widget.style.background=bg;
     currentThemeCircle.style.background=bg;
-    document.querySelectorAll('.bar-fill').forEach(b=>{
-      b.style.background=darken(barHex,0); // dynamically apply gradient if needed
-    });
+    document.querySelectorAll('.bar-fill').forEach(b=>{ b.style.background=darken(barHex,0); });
     localStorage.setItem('year-widget-theme', JSON.stringify({theme}));
   }
 
   const savedTheme=localStorage.getItem('year-widget-theme');
-  if(savedTheme){
-    try{ applyTheme(JSON.parse(savedTheme).theme); }catch(e){ applyTheme('pink'); }
-  } else applyTheme('pink');
+  if(savedTheme){ try{ applyTheme(JSON.parse(savedTheme).theme); } catch(e){ applyTheme('pink'); } } 
+  else applyTheme('pink');
 
   themeOptions.querySelectorAll('.theme-option-circle').forEach(el=>{
     el.addEventListener('click', ev=>{
@@ -516,25 +499,90 @@
       themeOptions.style.display='none';
     });
   });
+  themeSelector.addEventListener('click', e=>{ e.stopPropagation(); themeOptions.style.display=themeOptions.style.display==='flex'?'none':'flex'; });
 
-  themeSelector.addEventListener('click', e=>{
-    e.stopPropagation();
-    themeOptions.style.display = themeOptions.style.display==='flex'?'none':'flex';
-  });
-
+  // ----------------------------
+  // ✅ Year Overview button
+  todayBtn.textContent='year overview';
   todayBtn.addEventListener('click', ()=>{
-    const idx=new Date().getMonth();
-    const target=barsWrap.querySelector(`[data-month="${year}-${String(idx+1).padStart(2,'0')}"]`);
-    if(target) showTooltipForMonth(computeMonthStatsForSingle(idx), target.getBoundingClientRect());
+    const months=computeMonthStats();
+    const totalIncome = months.reduce((sum,m)=>sum+m.income,0).toFixed(2);
+    const totalExpenses = months.reduce((sum,m)=>sum+m.expenses,0).toFixed(2);
+    const completedMonths = months.filter(m=>m.completion===100).length;
+
+    tooltip.innerHTML=`
+      <div style="font-size:13px;font-weight:600;text-transform:capitalize">Year Overview ${year}</div>
+      <div class="row"><span>months completed</span><strong>${completedMonths}/12</strong></div>
+      <div class="row"><span>total income</span><strong>$${totalIncome}</strong></div>
+      <div class="row"><span>total expenses</span><strong>$${totalExpenses}</strong></div>
+    `;
+    const wRect=widget.getBoundingClientRect();
+    tooltip.style.left=`${wRect.width/2 - 120}px`;
+    tooltip.style.top='20px';
+    tooltip.style.display='block';
+    tooltip.dataset.pinned='1';
   });
 
+  // ----------------------------
+  // ✅ Goals button fix
+  const goalsBtn = document.getElementById('goalsBtn');
+  const goalsModal = document.getElementById('goalsModal');
+  const goalInput = document.getElementById('goalInput');
+  const addGoalBtn = document.getElementById('addGoalBtn');
+  const goalList = document.getElementById('goalList');
+  const closeGoals = document.getElementById('closeGoals');
+  const clearGoals = document.getElementById('clearGoals');
+
+  const goalsKey = `yearly-goals-${year}`;
+  function loadGoals(){ try { return JSON.parse(localStorage.getItem(goalsKey)||'[]'); } catch(e){ return []; } }
+  function saveGoals(list){ localStorage.setItem(goalsKey, JSON.stringify(list)); }
+  function renderGoals(){
+    const list=loadGoals();
+    goalList.innerHTML='';
+    list.forEach((g,i)=>{
+      const item=document.createElement('div');
+      item.className='goal-item';
+      item.innerHTML=`<div style="display:flex;flex-direction:column;align-items:flex-start"><strong style="font-size:13px">${g.text}</strong><small>${g.date}</small></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button data-i="${i}" class="link-btn mark-done">done</button>
+        <button data-i="${i}" class="link-btn remove-goal">remove</button>
+      </div>`;
+      goalList.appendChild(item);
+    });
+    goalList.querySelectorAll('.remove-goal').forEach(btn=>{ btn.addEventListener('click', ()=> { const idx=parseInt(btn.dataset.i,10); const arr=loadGoals(); arr.splice(idx,1); saveGoals(arr); renderGoals(); }); });
+    goalList.querySelectorAll('.mark-done').forEach(btn=>{ btn.addEventListener('click', ()=> { const idx=parseInt(btn.dataset.i,10); const arr=loadGoals(); arr[idx].done=true; saveGoals(arr); renderGoals(); }); });
+  }
+
+  goalsBtn.addEventListener('click', e=>{
+    e.stopPropagation();
+    tooltip.style.display='none';
+    tooltip.dataset.pinned='';
+    themeOptions.style.display='none';
+    goalsModal.style.display = goalsModal.style.display==='block'?'none':'block';
+    renderGoals();
+  });
+
+  addGoalBtn.addEventListener('click', ()=>{
+    const txt=(goalInput.value||'').trim();
+    if(!txt) return;
+    const arr=loadGoals();
+    arr.push({text:txt, date:new Date().toISOString().split('T')[0], done:false});
+    saveGoals(arr);
+    goalInput.value='';
+    renderGoals();
+  });
+
+  clearGoals.addEventListener('click', ()=>{ saveGoals([]); renderGoals(); });
+  closeGoals.addEventListener('click', ()=> goalsModal.style.display='none');
+
+  // ----------------------------
   refreshBtn.addEventListener('click', ()=>{ renderBars(); updateFooter(); });
 
   // init
-  renderBars();
-  updateFooter();
+  renderBars(); updateFooter();
 
-  document.body.addEventListener('click', ()=>{ tooltip.style.display='none'; tooltip.dataset.pinned=''; themeOptions.style.display='none'; });
+  document.body.addEventListener('click', ()=>{ tooltip.style.display='none'; tooltip.dataset.pinned=''; themeOptions.style.display='none'; goalsModal.style.display='none'; });
+
 })();
 </script>
 </body>
