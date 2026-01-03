@@ -337,17 +337,23 @@
   }
 
   // theme map
-  const themeMap = {
-    pink: { bg: '#ffe7f5', barHex: '#ff82a9' },
-    green: { bg: '#e7f8ee', barHex: '#3cba7f' },
-    lavender: { bg: '#f6e5fc', barHex: '#a96eff' },
-    blue: { bg: '#daece1', barHex: '#55c1a6' }
-  };
+  function cssVar(name){
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+}
+
+const themeMap = {
+  pink:   { bgVar: '--pink',   barVar: '--pink' },
+  green:  { bgVar: '--green',  barVar: '--green' },
+  blue:   { bgVar: '--blue',   barVar: '--blue' },
+  beige:  { bgVar: '--beige',  barVar: '--beige' }
+};
 
   Object.entries(themeMap).forEach(([k,c])=>{
     const d=document.createElement('div');
     d.className='theme-option-circle';
-    d.style.background=c.bg;
+    d.style.background = cssVar(c.bgVar);
     d.dataset.theme=k;
     themeOptions.appendChild(d);
   });
@@ -481,13 +487,29 @@
 
   // theme apply
   function applyTheme(theme){
-    const {bg, barHex}=themeMap[theme];
-    widget.style.background=bg;
-    currentThemeCircle.style.background=bg;
-    document.querySelectorAll('.bar-fill').forEach(b=>{ b.style.background=darken(barHex,0); });
-    localStorage.setItem('year-widget-theme', JSON.stringify({theme}));
-  }
+  const { bgVar, barVar } = themeMap[theme];
 
+  const bg = cssVar(bgVar);
+  const barBase = cssVar(barVar);
+
+  widget.style.background = bg;
+  currentThemeCircle.style.background = bg;
+
+  document.querySelectorAll('.bar-fill').forEach(bar=>{
+    bar.style.background = `
+      linear-gradient(
+        to top,
+        ${darken(barBase, 14)},
+        ${lighten(barBase, 6)}
+      )
+    `;
+  });
+
+  localStorage.setItem(
+    'year-widget-theme',
+    JSON.stringify({ theme })
+  );
+}
   const savedTheme=localStorage.getItem('year-widget-theme');
   if(savedTheme){ try{ applyTheme(JSON.parse(savedTheme).theme); } catch(e){ applyTheme('pink'); } } 
   else applyTheme('pink');
