@@ -15,7 +15,12 @@
     --beige:#E7E3DC;
     --accent:#ff82a9;
     --muted:#9b9b9b;
-  }
+    --theme-bg: var(--pink);
+    --theme-bar: var(--pink);
+    --theme-panel: rgba(255,255,255,0.98);
+    --theme-border: rgba(0,0,0,0.08);
+    --theme-accent: var(--accent);
+}
 
   body{
     margin:0;
@@ -30,7 +35,7 @@
   .widget{
     width:340px;
     max-width:95vw;
-    background:var(--pink);
+    background: var(--theme-bg);
     border-radius:var(--radius);
     padding:14px;
     box-shadow:0 8px 22px rgba(0,0,0,0.12);
@@ -108,7 +113,7 @@
 
   .bar-fill{
   width:100%;
-  background:var(--accent); /* replaced static gradient */
+  background: var(--theme-bar);
   height:0%;
   transition:height .5s ease, background .3s ease;
   display:flex;
@@ -138,7 +143,7 @@
     position:absolute;
     min-width:180px;
     max-width:260px;
-    background: #fff0f8;
+    background: var(--theme-panel);
     border-radius:10px;
     padding:8px 10px;
     box-shadow:0 8px 20px rgba(0,0,0,0.12);
@@ -197,8 +202,8 @@
     width:92%;
     max-height:260px;
     overflow:auto;
-    background:rgba(255,255,255,0.98);
-    border-radius:12px;
+    background: var(--theme-panel);
+    border: 1px solid var(--theme-border);
     padding:10px;
     box-shadow:0 10px 30px rgba(0,0,0,0.12);
     z-index:50;
@@ -217,7 +222,7 @@
     outline:none;
   }
   .goal-list{ display:flex; flex-direction:column; gap:6px; margin-top:6px; }
-  .goal-item{ background:var(--pink); padding:8px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .goal-item{ background: var(--theme-bg); padding:8px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; gap:8px; }
   .goal-item small{ color:var(--muted); font-size:11px; }
 
   /* theme selector small copy of mood widget */
@@ -344,10 +349,10 @@
 }
 
 const themeMap = {
-  pink:   { bgVar: '--pink',   barVar: '--pink' },
-  green:  { bgVar: '--green',  barVar: '--green' },
-  blue:   { bgVar: '--blue',   barVar: '--blue' },
-  beige:  { bgVar: '--beige',  barVar: '--beige' }
+  pink:  { bg:'--pink',  bar:'--pink' },
+  green: { bg:'--green', bar:'--green' },
+  blue:  { bg:'--blue',  bar:'--blue' },
+  beige:{ bg:'--beige', bar:'--beige' }
 };
 
   Object.entries(themeMap).forEach(([k,c])=>{
@@ -487,10 +492,14 @@ const themeMap = {
 
   // theme apply
   function applyTheme(theme){
-  const { bgVar, barVar } = themeMap[theme];
+  const cfg = themeMap[theme] || themeMap.pink;
 
-  const bg = cssVar(bgVar);
-  const barBase = cssVar(barVar);
+  const bg = cssVar(cfg.bg);
+  const barBase = cssVar(cfg.bar);
+
+  document.documentElement.style.setProperty('--theme-bg', bg);
+  document.documentElement.style.setProperty('--theme-bar', barBase);
+  document.documentElement.style.setProperty('--theme-accent', darken(barBase, 20));
 
   widget.style.background = bg;
   currentThemeCircle.style.background = bg;
@@ -499,7 +508,7 @@ const themeMap = {
     bar.style.background = `
       linear-gradient(
         to top,
-        ${darken(barBase, 14)},
+        ${darken(barBase, 16)},
         ${lighten(barBase, 6)}
       )
     `;
@@ -510,19 +519,23 @@ const themeMap = {
     JSON.stringify({ theme })
   );
 }
-  const savedTheme=localStorage.getItem('year-widget-theme');
-  if(savedTheme){ try{ applyTheme(JSON.parse(savedTheme).theme); } catch(e){ applyTheme('pink'); } } 
-  else applyTheme('pink');
+  const saved = JSON.parse(
+  localStorage.getItem('year-widget-theme') || '{"theme":"pink"}'
+);
+applyTheme(saved.theme);
 
-  themeOptions.querySelectorAll('.theme-option-circle').forEach(el=>{
-    el.addEventListener('click', ev=>{
-      const theme=ev.target.dataset.theme;
-      applyTheme(theme);
-      themeOptions.style.display='none';
-    });
+themeOptions.querySelectorAll('.theme-option-circle').forEach(el=>{
+  el.addEventListener('click', ev=>{
+    applyTheme(ev.target.dataset.theme);
+    themeOptions.style.display = 'none';
   });
-  themeSelector.addEventListener('click', e=>{ e.stopPropagation(); themeOptions.style.display=themeOptions.style.display==='flex'?'none':'flex'; });
+});
 
+themeSelector.addEventListener('click', e=>{
+  e.stopPropagation();
+  themeOptions.style.display =
+    themeOptions.style.display === 'flex' ? 'none' : 'flex';
+});
   // ----------------------------
   // ----------------------------
 // ✅ Year Overview button fixed
@@ -611,10 +624,11 @@ todayBtn.addEventListener('click', (e) => {
   refreshBtn.addEventListener('click', ()=>{ renderBars(); updateFooter(); });
 
   // init
-  renderBars(); updateFooter();
-
-  document.body.addEventListener('click', ()=>{ tooltip.style.display='none'; tooltip.dataset.pinned=''; themeOptions.style.display='none'; goalsModal.style.display='none'; });
-
+ renderBars();
+applyTheme(
+  JSON.parse(localStorage.getItem('year-widget-theme') || '{"theme":"pink"}').theme
+);
+updateFooter();
 })();
 </script>
 </body>
